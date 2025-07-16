@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Manajemen Data KGB Pegawai</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        /* Optional: Custom scrollbar styles if needed */
+        /*
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        */
+        .loader {
+            border: 4px solid #f3f3f3; /* Light grey */
+            border-top: 4px solid #3498db; /* Blue */
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans leading-normal tracking-normal flex flex-col min-h-screen">
+
+    <aside class="bg-blue-100 text-blue-800 h-screen w-64 flex flex-col fixed shadow-lg z-20">
+        <div class="px-6 py-4 flex items-center justify-center border-b border-blue-200">
+            <h1 class="text-lg font-extrabold text-blue-900 text-center leading-tight">
+			Manajemen KGB<br>ASN KPU PROVINSI<br>SULAWESI TENGGARA
+			</h1>
+        </div>
+        <nav class="flex-1 px-4 py-6 space-y-2">
+            <a href="#" class="nav-link flex items-center px-4 py-2 rounded-lg text-blue-800 hover:bg-blue-200 transition duration-300 ease-in-out" data-target="dashboardSection">
+                <svg class="h-5 w-5 mr-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path></svg>
+                Dashboard
+            </a>
+            <a href="#" class="nav-link flex items-center px-4 py-2 rounded-lg text-blue-800 hover:bg-blue-200 transition duration-300 ease-in-out" data-target="addEmployeeSection">
+                <svg class="h-5 w-5 mr-3" fill="currentColor" viewBox="0 0 20 20"><path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z"></path></svg>
+                Tambah Pegawai
+            </a>
+            <a href="#" class="nav-link flex items-center px-4 py-2 rounded-lg text-blue-800 hover:bg-blue-200 transition duration-300 ease-in-out" data-target="upcomingKGBSection">
+                <svg class="h-5 w-5 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path></svg>
+                KGB Mendatang
+            </a>
+            <a href="#" class="nav-link flex items-center px-4 py-2 rounded-lg text-blue-800 hover:bg-blue-200 transition duration-300 ease-in-out" data-target="importExportSection">
+                <svg class="h-5 w-5 mr-3" fill="currentColor" viewBox="0 0 20 20"><path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 14a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 14a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                Import/Export Data
+            </a>
+        </nav>
+    </aside>
+
+    <main class="flex-1 ml-64 p-8">
+        <div id="loadingIndicator" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 hidden">
+            <div class="bg-white p-6 rounded-lg shadow-xl flex items-center">
+                <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mr-4"></div>
+                <span class="text-lg font-semibold text-gray-800">Memproses...</span>
+            </div>
+        </div>
+
+        <section id="dashboardSection" class="content-section hidden">
+            <h2 class="text-3xl font-bold mb-6 text-gray-800">Dashboard</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-gradient-to-br from-blue-500 to-blue-700 text-white p-6 rounded-lg shadow-md flex items-center justify-between transform transition duration-300 hover:scale-105">
+                    <div>
+                        <div class="text-sm font-medium opacity-90">Total Pegawai</div>
+                        <div id="totalEmployeesCard" class="text-4xl font-bold mt-1">0</div>
+                    </div>
+                    <svg class="h-12 w-12 opacity-50" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path></svg>
+                </div>
+                <div class="bg-gradient-to-br from-green-500 to-green-700 text-white p-6 rounded-lg shadow-md flex items-center justify-between transform transition duration-300 hover:scale-105">
+                    <div>
+                        <div class="text-sm font-medium opacity-90">KGB Akan Datang (12 Bulan)</div>
+                        <div id="upcomingKGBCard" class="text-4xl font-bold mt-1">0</div>
+                    </div>
+                    <svg class="h-12 w-12 opacity-50" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path></svg>
+                </div>
+                <div class="bg-gradient-to-br from-yellow-500 to-yellow-700 text-white p-6 rounded-lg shadow-md flex items-center justify-between transform transition duration-300 hover:scale-105">
+                    <div>
+                        <div class="text-sm font-medium opacity-90">KGB Bulan Ini</div>
+                        <div id="currentMonthKGBCard" class="text-4xl font-bold mt-1">0</div>
+                    </div>
+                    <svg class="h-12 w-12 opacity-50" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path></svg>
+                </div>
+                <div class="bg-gradient-to-br from-red-500 to-red-700 text-white p-6 rounded-lg shadow-md flex items-center justify-between transform transition duration-300 hover:scale-105">
+                    <div>
+                        <div class="text-sm font-medium opacity-90">KGB Terlambat</div>
+                        <div id="overdueKGBCard" class="text-4xl font-bold mt-1">0</div>
+                    </div>
+                    <svg class="h-12 w-12 opacity-50" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+                <h3 class="text-xl font-semibold mb-4 text-gray-800">Daftar Pegawai (Ringkasan)</h3>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIP</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pangkat/Gol.</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gaji Pokok Baru</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Masa Kerja</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TMT KGB Berikutnya</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Kerja</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashboardEmployeeTableBody" class="bg-white divide-y divide-gray-200">
+                            </tbody>
+                    </table>
+                </div>
+                <div id="dashboardEmployeePagination" class="flex justify-center mt-4 space-x-2">
+                    </div>
+            </div>
+        </section>
+
+        <section id="addEmployeeSection" class="content-section hidden">
+            <h2 class="text-3xl font-bold mb-6 text-gray-800">Tambah Pegawai Baru</h2>
+            <div class="bg-white p-8 rounded-lg shadow-md">
+                <form id="employeeForm">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="nama" class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                            <input type="text" id="nama" name="nama" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        <div>
+                            <label for="nip" class="block text-sm font-medium text-gray-700 mb-1">NIP</label>
+                            <input type="text" id="nip" name="nip" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        <div>
+                            <label for="pangkatGolongan" class="block text-sm font-medium text-gray-700 mb-1">Pangkat/Golongan</label>
+                            <select id="pangkatGolongan" name="pangkatGolongan" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Pilih Golongan</option>
+                                <optgroup label="Golongan I">
+                                    <option value="I/a">I/a - Juru Muda</option>
+                                    <option value="I/b">I/b - Juru Muda Tk.I</option>
+                                    <option value="I/c">I/c - Juru</option>
+                                    <option value="I/d">I/d - Juru Tk.I</option>
+                                </optgroup>
+                                <optgroup label="Golongan II">
+                                    <option value="II/a">II/a - Pengatur Muda</option>
+                                    <option value="II/b">II/b - Pengatur Muda Tk.I</option>
+                                    <option value="II/c">II/c - Pengatur</option>
+                                    <option value="II/d">II/d - Pengatur Tk.I</option>
+                                </optgroup>
+                                <optgroup label="Golongan III">
+                                    <option value="III/a">III/a - Penata Muda</option>
+                                    <option value="III/b">III/b - Penata Muda Tk.I</option>
+                                    <option value="III/c">III/c - Penata</option>
+                                    <option value="III/d">III/d - Penata Tk.I</option>
+                                </optgroup>
+                                <optgroup label="Golongan IV">
+                                    <option value="IV/a">IV/a - Pembina</option>
+                                    <option value="IV/b">IV/b - Pembina Tk.I</option>
+                                    <option value="IV/c">IV/c - Pembina Utama Muda</option>
+                                    <option value="IV/d">IV/d - Pembina Utama Madya</option>
+                                    <option value="IV/e">IV/e - Pembina Utama</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="jabatan" class="block text-sm font-medium text-gray-700 mb-1">Jabatan</label>
+                            <input type="text" id="jabatan" name="jabatan" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="unitKerja" class="block text-sm font-medium text-gray-700 mb-1">Unit Kerja</label>
+                            <input type="text" id="unitKerja" name="unitKerja" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="statusPegawai" class="block text-sm font-medium text-gray-700 mb-1">Status Pegawai</label>
+                            <select id="statusPegawai" name="statusPegawai" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="PNS Pusat">PNS Pusat</option>
+                                <option value="PPPK">PPPK</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <h3 class="text-xl font-semibold mb-4 text-gray-800 border-t pt-6 mt-6">Data KGB Terakhir/Baru</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="gajiPokokLama" class="block text-sm font-medium text-gray-700 mb-1">Gaji Pokok Lama</label>
+                            <input type="text" id="gajiPokokLama" name="gajiPokokLama" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" value="0">
+                        </div>
+                        <div>
+                            <label for="gajiPokokBaru" class="block text-sm font-medium text-gray-700 mb-1">Gaji Pokok Baru</label>
+                            <input type="text" id="gajiPokokBaru" name="gajiPokokBaru" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" value="0">
+                            <p id="gajiPokokBaruTerbilang" class="text-xs text-gray-500 mt-1 capitalize">nol</p>
+                        </div>
+                        <div>
+                            <label for="masaKerjaTahun" class="block text-sm font-medium text-gray-700 mb-1">Masa Kerja (Tahun)</label>
+                            <input type="number" id="masaKerjaTahun" name="masaKerjaTahun" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" min="0" value="0">
+                        </div>
+                        <div>
+                            <label for="masaKerjaBulan" class="block text-sm font-medium text-gray-700 mb-1">Masa Kerja (Bulan)</label>
+                            <input type="number" id="masaKerjaBulan" name="masaKerjaBulan" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" min="0" max="11" value="0">
+                        </div>
+                        <div>
+                            <label for="tmtKgbTerakhir" class="block text-sm font-medium text-gray-700 mb-1">TMT KGB Terakhir</label>
+                            <input type="date" id="tmtKgbTerakhir" name="tmtKgbTerakhir" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="mulaiBerlaku" class="block text-sm font-medium text-gray-700 mb-1">Mulai Berlaku Gaji Baru</label>
+                            <input type="date" id="mulaiBerlaku" name="mulaiBerlaku" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="tmtKgbBerikutnya" class="block text-sm font-medium text-gray-700 mb-1">TMT KGB Berikutnya</label>
+                            <input type="date" id="tmtKgbBerikutnya" name="tmtKgbBerikutnya" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-gray-50" readonly>
+                            <p class="text-xs text-gray-500 mt-1">Otomatis terisi 2 tahun setelah "Mulai Berlaku Gaji Baru".</p>
+                        </div>
+                        <div>
+                            <label for="noSkKgb" class="block text-sm font-medium text-gray-700 mb-1">Nomor SK KGB</label>
+                            <input type="text" id="noSkKgb" name="noSkKgb" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end space-x-4 mt-8">
+                        <button type="submit" id="submitButton" class="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                            Tambah Pegawai
+                        </button>
+                        <button type="button" id="updateButton" class="bg-green-600 text-white py-2 px-6 rounded-lg hover:bg-green-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 hidden">
+                            Perbarui Data Pegawai
+                        </button>
+                        <button type="button" id="addKGBForExistingButton" class="bg-purple-600 text-white py-2 px-6 rounded-lg hover:bg-purple-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 hidden">
+                            Tambah Riwayat KGB
+                        </button>
+                        <button type="button" id="cancelEditButton" class="bg-gray-400 text-white py-2 px-6 rounded-lg hover:bg-gray-500 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus->ring-gray-300 focus:ring-opacity-50 hidden">
+                            Batal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section id="upcomingKGBSection" class="content-section hidden">
+            <h2 class="text-3xl font-bold mb-6 text-gray-800">KGB Mendatang</h2>
+            <div class="bg-white p-8 rounded-lg shadow-md">
+                <div class="mb-4 flex flex-col md:flex-row gap-4">
+                    <div class="w-full md:w-1/2">
+                        <label for="filterMonth" class="block text-sm font-medium text-gray-700 mb-1">Filter Bulan:</label>
+                        <select id="filterMonth" class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                            <option value="all">Semua Bulan</option>
+                            <option value="0">Januari</option>
+                            <option value="1">Februari</option>
+                            <option value="2">Maret</option>
+                            <option value="3">April</option>
+                            <option value="4">Mei</option>
+                            <option value="5">Juni</option>
+                            <option value="6">Juli</option>
+                            <option value="7">Agustus</option>
+                            <option value="8">September</option>
+                            <option value="9">Oktober</option>
+                            <option value="10">November</option>
+                            <option value="11">Desember</option>
+                        </select>
+                    </div>
+                    <div class="w-full md:w-1/2">
+                        <label for="filterYear" class="block text-sm font-medium text-gray-700 mb-1">Filter Tahun:</label>
+                        <select id="filterYear" class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                            </select>
+                    </div>
+                </div>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIP</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pangkat/Gol.</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TMT KGB Terakhir</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TMT KGB Berikutnya</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Kerja</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="upcomingKGBTableBody" class="bg-white divide-y divide-gray-200">
+                            </tbody>
+                    </table>
+                </div>
+                <div id="upcomingKGBPagination" class="flex justify-center mt-4 space-x-2">
+                    </div>
+            </div>
+        </section>
+
+        <section id="importExportSection" class="content-section hidden">
+            <h2 class="text-3xl font-bold mb-6 text-gray-800">Import/Export Data</h2>
+            <div class="bg-white p-8 rounded-lg shadow-md mb-8">
+                <h3 class="text-xl font-semibold mb-4 text-gray-800">Export Data Pegawai</h3>
+                <div class="flex flex-col md:flex-row gap-4 items-center">
+                    <div class="w-full md:w-1/3">
+                        <label for="exportYearFilter" class="block text-sm font-medium text-gray-700 mb-1">Filter Tahun KGB Mendatang untuk Export:</label>
+                        <select id="exportYearFilter" class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                            </select>
+                    </div>
+                    <div class="w-full md:w-2/3 flex flex-col md:flex-row gap-4 md:justify-end">
+                        <button onclick="exportToExcel()" class="bg-green-600 text-white py-2 px-6 rounded-lg hover:bg-green-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">
+                            Export ke Excel
+                        </button>
+                        <button onclick="exportToPdf()" class="bg-red-600 text-white py-2 px-6 rounded-lg hover:bg-red-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">
+                            Export ke PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold mb-4 text-gray-800">Import Data Pegawai dari Excel</h3>
+                <p class="text-gray-600 mb-4">
+                    Peringatan: Mengimpor data akan **menimpa semua data pegawai yang ada** saat ini. Pastikan file Excel Anda memiliki kolom header yang sesuai: "Nama Lengkap", "NIP", "Pangkat/Golongan", "Jabatan", "Unit Kerja", "Status Pegawai", "Gaji Pokok Lama (Saat Ini)", "Gaji Pokok Baru (Saat Ini)", "Masa Kerja Tahun (Saat Ini)", "Masa Kerja Bulan (Saat Ini)", "TMT KGB Terakhir (Saat Ini)", "Mulai Berlaku (Saat Ini)", "TMT KGB Berikutnya (Saat Ini)", "No. SK KGB (Saat Ini)". Untuk riwayat KGB, gunakan format "History N - [Nama Kolom Riwayat]".
+                </p>
+                <input type="file" id="importFileInput" accept=".xlsx" class="mb-4 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                <button onclick="importFromExcel()" class="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                    Import dari Excel
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="messageModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-11/12 md:w-1/3">
+            <h3 id="modalTitle" class="text-xl font-semibold mb-4 text-gray-800">Pesan</h3>
+            <p id="modalMessage" class="text-gray-700 mb-6"></p>
+            <div id="modalActions" class="flex justify-end space-x-4">
+                </div>
+        </div>
+    </div>
+
+    <div id="historyModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-11/12 max-w-4xl max-h-[90vh] flex flex-col">
+            <h3 class="text-xl font-semibold mb-4 text-gray-800">Riwayat KGB untuk <span id="historyEmployeeName" class="text-blue-600"></span></h3>
+            <div class="overflow-y-auto custom-scrollbar flex-grow mb-6">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50 sticky top-0">
+                        <tr>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TMT KGB Terakhir</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mulai Berlaku</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gaji Pokok Lama</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gaji Pokok Baru</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Masa Kerja</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TMT KGB Berikutnya</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No. SK KGB</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody" class="bg-white divide-y divide-gray-200">
+                        </tbody>
+                </table>
+            </div>
+            <div class="flex justify-between items-center mt-4">
+                <button id="addHistoryEntryButton" class="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">Tambah Riwayat Baru</button>
+                <button onclick="closeHistoryModal()" class="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="ml-64 p-4 text-center text-gray-600 text-sm border-t border-gray-300 mt-auto">
+        &copy; 2024 Aplikasi Manajemen KGB ASN KPU Provinsi Sulawesi Tenggara. All rights reserved. Developed by Andi Ainul Furqan.
+    </footer>
+
+
+    <script>
+        // --- 1. Variabel Global ---
+        let employees = [];
+        const ITEMS_PER_PAGE = 10;
+        let currentDashboardPage = 1; // Untuk tabel Dashboard
+        let currentUpcomingPage = 1; // Untuk tabel KGB Mendatang
+        let currentEditingNIP = null; // Tambahkan ini untuk melacak NIP yang sedang diedit
+
+        // --- 2. Fungsi Modal & Loading ---
+        function showMessageModal(title, message, isConfirm = false, onConfirm = null, onCancel = null) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalMessage').innerHTML = message; // Use innerHTML to allow <br>
+            const modalActions = document.getElementById('modalActions');
+            modalActions.innerHTML = '';
+            if (isConfirm) {
+                modalActions.innerHTML = `
+                    <button onclick="closeModal(); ${onCancel ? onCancel : ''}" class="w-full md:w-auto bg-gray-400 text-white py-2 px-4 rounded-lg hover:bg-gray-500 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50">Batal</button>
+                    <button onclick="closeModal(); ${onConfirm}()" class="w-full md:w-auto bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Lanjutkan</button>
+                `;
+            } else {
+                modalActions.innerHTML = `
+                    <button onclick="closeModal()" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Tutup</button>
+                `;
+            }
+            document.getElementById('messageModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('messageModal').classList.add('hidden');
+        }
+
+        function showLoadingIndicator() {
+            document.getElementById('loadingIndicator').classList.remove('hidden');
+        }
+
+        function hideLoadingIndicator() {
+            document.getElementById('loadingIndicator').classList.add('hidden');
+        }
+
+        // --- 3. Fungsi Riwayat KGB ---
+        function showHistoryModal(nip) {
+            const employee = employees.find(emp => emp.nip === nip);
+            if (!employee) {
+                showMessageModal('Error', 'Data pegawai tidak ditemukan.');
+                return;
+            }
+
+            document.getElementById('historyEmployeeName').innerText = employee.nama;
+            document.getElementById('historyEmployeeName').dataset.nip = nip; // Simpan NIP di dataset untuk digunakan tombol "Tambah Riwayat Baru"
+
+            const historyTableBody = document.getElementById('historyTableBody');
+            historyTableBody.innerHTML = '';
+
+            if (employee.kgbHistory && employee.kgbHistory.length > 0) {
+                // Urutkan riwayat dari yang terbaru ke terlama (atau terlama ke terbaru, tergantung preferensi)
+                // Disini saya pakai terlama ke terbaru untuk urutan logis
+                const sortedHistory = [...employee.kgbHistory].sort((a, b) => new Date(a.mulaiBerlaku + 'T00:00:00') - new Date(b.mulaiBerlaku + 'T00:00:00'));
+
+                sortedHistory.forEach((history, index) => {
+                    const row = historyTableBody.insertRow();
+                    row.className = 'hover:bg-gray-50';
+                    row.innerHTML = `
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800">${formatDate(history.tmtKgbTerakhir)}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800">${formatDate(history.mulaiBerlaku)}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800">${formatCurrency(history.gajiPokokLama)}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800">${formatCurrency(history.gajiPokokBaru)}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800">${history.masaKerjaTahun} th ${history.masaKerjaBulan} bln</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800">${formatDate(history.tmtKgbBerikutnya)}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800">${history.noSkKgb || '-'}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
+                            <button onclick="editKGBHistoryEntry('${nip}', ${index})" class="text-indigo-600 hover:text-indigo-900">Edit</button>
+                            <button onclick="deleteKGBHistoryEntry('${nip}', ${index})" class="text-red-600 hover:text-red-900 ml-2">Hapus</button>
+                        </td>
+                    `;
+                });
+            } else {
+                historyTableBody.innerHTML = `<tr><td colspan="8" class="px-4 py-2 text-center text-gray-500">Tidak ada riwayat KGB.</td></tr>`;
+            }
+            document.getElementById('historyModal').classList.remove('hidden');
+        }
+
+        function closeHistoryModal() {
+            document.getElementById('historyModal').classList.add('hidden');
+        }
+
+        function editKGBHistoryEntry(nip, historyIndex) {
+            const employee = employees.find(emp => emp.nip === nip);
+            if (employee && employee.kgbHistory && employee.kgbHistory[historyIndex]) {
+                const historyEntry = employee.kgbHistory[historyIndex];
+
+                // Set currentEditingNIP to the employee's NIP
+                currentEditingNIP = nip;
+
+                // Populate the main employee form with this history entry's data
+                document.getElementById('nama').value = employee.nama;
+                document.getElementById('nip').value = employee.nip;
+                document.getElementById('nip').readOnly = true; // NIP tidak bisa diubah saat edit
+                document.getElementById('pangkatGolongan').value = employee.pangkatGolongan;
+                document.getElementById('jabatan').value = employee.jabatan;
+                document.getElementById('unitKerja').value = employee.unitKerja;
+                document.getElementById('statusPegawai').value = employee.statusPegawai;
+
+                document.getElementById('gajiPokokLama').value = formatCurrency(historyEntry.gajiPokokLama);
+                document.getElementById('gajiPokokBaru').value = formatCurrency(historyEntry.gajiPokokBaru);
+                document.getElementById('masaKerjaTahun').value = historyEntry.masaKerjaTahun;
+                document.getElementById('masaKerjaBulan').value = historyEntry.masaKerjaBulan;
+                document.getElementById('tmtKgbTerakhir').value = historyEntry.tmtKgbTerakhir;
+                document.getElementById('mulaiBerlaku').value = historyEntry.mulaiBerlaku;
+                document.getElementById('tmtKgbBerikutnya').value = historyEntry.tmtKgbBerikutnya;
+                document.getElementById('noSkKgb').value = historyEntry.noSkKgb;
+
+                updateTerbilang(historyEntry.gajiPokokBaru, 'gajiPokokBaruTerbilang');
+
+                // Tampilkan tombol update dan tambah riwayat, sembunyikan tombol submit
+                document.getElementById('submitButton').classList.add('hidden');
+                document.getElementById('updateButton').classList.remove('hidden');
+                document.getElementById('cancelEditButton').classList.remove('hidden');
+                document.getElementById('addKGBForExistingButton').classList.add('hidden'); // Hide this as we're editing a specific history, not adding a new one *yet*.
+
+                // This is the crucial part for linking the edit
+                // We'll use a data attribute on the form or a global variable to store which history entry is being edited
+                document.getElementById('employeeForm').dataset.editingHistoryIndex = historyIndex;
+
+
+                // Close history modal and navigate to addEmployeeSection
+                closeHistoryModal();
+                document.querySelector('.nav-link[data-target="addEmployeeSection"]').click();
+                showMessageModal('Informasi', 'Form Tambah Pegawai telah diisi dengan data riwayat KGB yang Anda pilih. Anda bisa mengeditnya dan menekan "Perbarui Data Pegawai" untuk menyimpan perubahan.');
+            } else {
+                showMessageModal('Error', 'Riwayat KGB tidak ditemukan.');
+            }
+        }
+
+
+        function deleteKGBHistoryEntry(nip, historyIndex) {
+            showMessageModal(
+                'Konfirmasi Hapus',
+                'Apakah Anda yakin ingin menghapus riwayat KGB ini? Tindakan ini tidak dapat dibatalkan.',
+                true,
+                `confirmDeleteKGBHistoryEntry('${nip}', ${historyIndex})`
+            );
+        }
+
+        function confirmDeleteKGBHistoryEntry(nip, historyIndex) {
+            let employee = employees.find(emp => emp.nip === nip);
+            if (employee && employee.kgbHistory) {
+                employee.kgbHistory.splice(historyIndex, 1);
+
+                // If the last entry was deleted, update main employee object to the new last entry
+                if (employee.kgbHistory.length > 0) {
+                    // Sort again to find the truly latest entry after deletion
+                    employee.kgbHistory.sort((a, b) => new Date(b.mulaiBerlaku + 'T00:00:00') - new Date(a.mulaiBerlaku + 'T00:00:00'));
+                    const newLatestKGB = employee.kgbHistory[0]; // After sorting descending, index 0 is latest
+                    employee.gajiPokokLama = newLatestKGB.gajiPokokLama;
+                    employee.gajiPokokBaru = newLatestKGB.gajiPokokBaru;
+                    employee.masaKerjaTahun = newLatestKGB.masaKerjaTahun;
+                    employee.masaKerjaBulan = newLatestKGB.masaKerjaBulan;
+                    employee.tmtKgbTerakhir = newLatestKGB.tmtKgbTerakhir;
+                    employee.mulaiBerlaku = newLatestKGB.mulaiBerlaku;
+                    employee.tmtKgbBerikutnya = newLatestKGB.tmtKgbBerikutnya;
+                    employee.noSkKgb = newLatestKGB.noSkKgb;
+                } else {
+                    // If all history is deleted, clear current KGB data AND delete the employee
+                    // Show confirmation for full employee deletion
+                    showMessageModal(
+                        'Konfirmasi Hapus Pegawai',
+                        `Semua riwayat KGB untuk ${employee.nama} telah dihapus. Apakah Anda juga ingin menghapus data pegawai ini sepenuhnya?`,
+                        true,
+                        `performDeleteEmployee('${nip}')`
+                    );
+                    return; // Exit here, actual save/delete happens in performDeleteEmployee
+                }
+
+                saveEmployees();
+                renderDashboardTable(); // Render dashboard table
+                renderUpcomingKGBTable();
+                updateDashboardCards();
+                showHistoryModal(nip); // Re-open history modal to show updated list
+                showMessageModal('Berhasil', 'Riwayat KGB berhasil dihapus.');
+            } else {
+                showMessageModal('Gagal', 'Gagal menghapus riwayat KGB.');
+            }
+        }
+
+        function performDeleteEmployee(nip) {
+            employees = employees.filter(emp => emp.nip !== nip);
+            saveEmployees();
+            renderDashboardTable();
+            renderUpcomingKGBTable();
+            updateDashboardCards();
+            showMessageModal('Berhasil', 'Data pegawai beserta seluruh riwayatnya berhasil dihapus.');
+            closeHistoryModal(); // Close history modal after full deletion
+        }
+
+
+        // --- 4. Fungsi Pembantu Umum ---
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            try {
+                return new Date(dateString + 'T00:00:00').toLocaleDateString('id-ID', options);
+            } catch (e) {
+                console.error("Invalid date string:", dateString, e);
+                return '-';
+            }
+        }
+
+        function formatDateToIndonesian(date) {
+            if (!(date instanceof Date)) {
+                try {
+                    date = new Date(date + 'T00:00:00'); // Add time to parse correctly
+                } catch (e) {
+                    console.error("Invalid date object/string for Indonesian format:", date, e);
+                    return '-';
+                }
+            }
+            if (isNaN(date.getTime())) return '-'; // Check for invalid date
+
+            const bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+            const tanggal = date.getDate();
+            const namaBulan = bulan[date.getMonth()];
+            const tahun = date.getFullYear();
+
+            return `${tanggal} ${namaBulan} ${tahun}`;
+        }
+
+        function formatCurrency(amount) {
+            // Ensure amount is a number before formatting
+            const numberValue = typeof amount === 'string' ? parseFloat(amount.replace(/[^0-9,.]/g, '').replace(',', '.')) : amount;
+
+            if (isNaN(numberValue)) {
+                return 'Rp 0';
+            }
+
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(numberValue);
+        }
+
+        function cleanCurrencyFormat(formattedAmount) {
+            if (typeof formattedAmount !== 'string') return formattedAmount;
+            // Remove 'Rp ', '.' and then parse as integer
+            return parseInt(formattedAmount.replace(/Rp\s?|\./g, ''), 10) || 0;
+        }
+
+        const units = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan'];
+        const teens = ['sepuluh', 'sebelas', 'dua belas', 'tiga belas', 'empat belas', 'lima belas', 'enam belas', 'tujuh belas', 'delapan belas', 'sembilan belas'];
+        const tens = ['', '', 'dua puluh', 'tiga puluh', 'empat puluh', 'lima puluh', 'enam puluh', 'tujuh puluh', 'delapan puluh', 'sembilan puluh'];
+        const thousands = ['', 'ribu', 'juta', 'miliar', 'triliun'];
+
+        function terbilang(num) {
+            if (num === 0) return 'nol';
+            if (typeof num !== 'number') return '';
+
+            let result = '';
+            let i = 0;
+            do {
+                let n = num % 1000;
+                if (n !== 0) {
+                    let s = convertHundreds(n);
+                    result = s + ' ' + thousands[i] + ' ' + result;
+                }
+                num = Math.floor(num / 1000);
+                i++;
+            } while (num > 0);
+
+            return result.trim().replace(/\s+/g, ' ');
+        }
+
+        function convertHundreds(num) {
+            let s = '';
+            let n = Math.floor(num / 100);
+            if (n > 0) {
+                s += (n === 1 ? 'seratus' : units[n] + ' ratus');
+            }
+            num %= 100;
+            if (num > 0) {
+                if (s !== '') s += ' ';
+                if (num < 10) {
+                    s += units[num];
+                } else if (num >= 10 && num < 20) {
+                    s += teens[num - 10];
+                } else {
+                    s += tens[Math.floor(num / 10)];
+                    if ((num % 10) > 0) {
+                        s += ' ' + units[num % 10];
+                    }
+                }
+            }
+            return s;
+        }
+
+        function updateTerbilang(value, targetId) {
+            const cleanedValue = cleanCurrencyFormat(value);
+            document.getElementById(targetId).innerText = terbilang(cleanedValue);
+        }
+
+        // Fungsi untuk menghitung TMT KGB Berikutnya (2 tahun dari TMT KGB Terakhir/Mulai Berlaku)
+        function calculateTmtKgbBerikutnya() {
+            const tmtKgbTerakhirInput = document.getElementById('tmtKgbTerakhir');
+            const mulaiBerlakuInput = document.getElementById('mulaiBerlaku');
+            const tmtKgbBerikutnyaInput = document.getElementById('tmtKgbBerikutnya');
+
+            let baseDateString = '';
+
+            // Prioritaskan 'Mulai Berlaku' jika ada, jika tidak gunakan 'TMT KGB Terakhir'
+            if (mulaiBerlakuInput.value) {
+                baseDateString = mulaiBerlakuInput.value;
+            } else if (tmtKgbTerakhirInput.value) {
+                baseDateString = tmtKgbTerakhirInput.value;
+            }
+
+            if (baseDateString) {
+                const baseDate = new Date(baseDateString + 'T00:00:00'); // Add time to avoid timezone issues
+                // Tambahkan 2 tahun
+                baseDate.setFullYear(baseDate.getFullYear() + 2);
+
+                // Format tanggal ke YYYY-MM-DD
+                const year = baseDate.getFullYear();
+                const month = String(baseDate.getMonth() + 1).padStart(2, '0');
+                const day = String(baseDate.getDate()).padStart(2, '0');
+                tmtKgbBerikutnyaInput.value = `${year}-${month}-${day}`;
+            } else {
+                tmtKgbBerikutnyaInput.value = ''; // Kosongkan jika tidak ada tanggal dasar
+            }
+        }
+
+
+        // --- 6. Fungsi Manajemen Data (Add, Save, Load, Edit, Update, Delete) ---
+        function addEmployee(event) {
+            event.preventDefault();
+            const employeeForm = document.getElementById('employeeForm');
+            const newNIP = employeeForm.nip.value;
+
+            // Check if NIP already exists
+            const existingEmployee = employees.find(emp => emp.nip === newNIP);
+            if (existingEmployee) {
+                showMessageModal(
+                    'NIP Sudah Terdaftar',
+                    `NIP "${newNIP}" sudah terdaftar dengan nama ${existingEmployee.nama}.<br>Apakah Anda ingin menambahkan riwayat KGB baru untuk pegawai ini?`,
+                    true,
+                    `addKGBEntryFromHistoryModal('${newNIP}')`, // Callback if user confirms to add new KGB history
+                    `resetForm()` // Callback if user cancels
+                );
+                return;
+            }
+
+            const newEmployee = {
+                nama: employeeForm.nama.value,
+                nip: newNIP, // Use the newNIP
+                pangkatGolongan: employeeForm.pangkatGolongan.value,
+                jabatan: employeeForm.jabatan.value,
+                unitKerja: employeeForm.unitKerja.value,
+                statusPegawai: employeeForm.statusPegawai.value,
+                gajiPokokLama: cleanCurrencyFormat(employeeForm.gajiPokokLama.value),
+                gajiPokokBaru: cleanCurrencyFormat(employeeForm.gajiPokokBaru.value),
+                masaKerjaTahun: parseInt(employeeForm.masaKerjaTahun.value) || 0,
+                masaKerjaBulan: parseInt(employeeForm.masaKerjaBulan.value) || 0,
+                tmtKgbTerakhir: employeeForm.tmtKgbTerakhir.value,
+                mulaiBerlaku: employeeForm.mulaiBerlaku.value,
+                tmtKgbBerikutnya: employeeForm.tmtKgbBerikutnya.value, // Already calculated by event listener
+                noSkKgb: employeeForm.noSkKgb.value,
+                kgbHistory: [] // Initialize history
+            };
+
+
+            // Add current KGB as first history entry for a truly new employee
+            // Only push if 'mulaiBerlaku' and 'gajiPokokBaru' are present to ensure valid first entry
+            if (newEmployee.mulaiBerlaku && newEmployee.gajiPokokBaru > 0) {
+                newEmployee.kgbHistory.push({
+                    gajiPokokLama: newEmployee.gajiPokokLama,
+                    gajiPokokBaru: newEmployee.gajiPokokBaru,
+                    masaKerjaTahun: newEmployee.masaKerjaTahun,
+                    masaKerjaBulan: newEmployee.masaKerjaBulan,
+                    tmtKgbTerakhir: newEmployee.tmtKgbTerakhir,
+                    mulaiBerlaku: newEmployee.mulaiBerlaku,
+                    tmtKgbBerikutnya: newEmployee.tmtKgbBerikutnya,
+                    noSkKgb: newEmployee.noSkKgb
+                });
+            }
+
+            employees.push(newEmployee);
+            showMessageModal('Berhasil', 'Pegawai baru berhasil ditambahkan.');
+
+            saveEmployees();
+            resetForm();
+            renderDashboardTable(); // Render dashboard table
+            renderUpcomingKGBTable();
+            updateDashboardCards();
+        }
+
+        // Removed editEmployeeAndSwitchToManage since manageEmployeeSection is removed.
+        // The previous behavior of "editEmployee" will be handled by "addKGBEntryFromHistoryModal" or directly.
+
+        function saveEmployees() {
+            localStorage.setItem('employees', JSON.stringify(employees));
+        }
+
+        function loadEmployees() {
+            const storedEmployees = localStorage.getItem('employees');
+            if (storedEmployees) {
+                employees = JSON.parse(storedEmployees);
+                // Ensure kgbHistory is an array for older data
+                employees.forEach(emp => {
+                    if (!emp.kgbHistory) {
+                        emp.kgbHistory = [];
+                        // For older entries that might not have kgbHistory, add current data as the first history
+                        if (emp.mulaiBerlaku && emp.gajiPokokBaru) {
+                            emp.kgbHistory.push({
+                                gajiPokokLama: emp.gajiPokokLama,
+                                gajiPokokBaru: emp.gajiPokokBaru,
+                                masaKerjaTahun: emp.masaKerjaTahun,
+                                masaKerjaBulan: emp.masaKerjaBulan,
+                                tmtKgbTerakhir: emp.tmtKgbTerakhir,
+                                mulaiBerlaku: emp.mulaiBerlaku,
+                                tmtKgbBerikutnya: emp.tmtKgbBerikutnya,
+                                noSkKgb: emp.noSkKgb
+                            });
+                        }
+                    }
+                    // Re-sort history to ensure the latest is always at the end
+                    if (emp.kgbHistory && emp.kgbHistory.length > 0) {
+                         emp.kgbHistory.sort((a, b) => new Date(a.mulaiBerlaku + 'T00:00:00') - new Date(b.mulaiBerlaku + 'T00:00:00'));
+                         // Ensure main employee fields reflect the latest history entry after sorting
+                        const latestKGB = emp.kgbHistory[emp.kgbHistory.length - 1];
+                        emp.gajiPokokLama = latestKGB.gajiPokokLama;
+                        emp.gajiPokokBaru = latestKGB.gajiPokokBaru;
+                        emp.masaKerjaTahun = latestKGB.masaKerjaTahun;
+                        emp.masaKerjaBulan = latestKGB.masaKerjaBulan;
+                        emp.tmtKgbTerakhir = latestKGB.tmtKgbTerakhir;
+                        emp.mulaiBerlaku = latestKGB.mulaiBerlaku;
+                        emp.tmtKgbBerikutnya = latestKGB.tmtKgbBerikutnya;
+                        emp.noSkKgb = latestKGB.noSkKgb;
+                    }
+                });
+            }
+        }
+
+        // Edit function now for direct editing of main employee record or pre-filling for KGB add
+        function editEmployeeForKGBAdd(nip) {
+            const employee = employees.find(emp => emp.nip === nip);
+            if (employee) {
+                currentEditingNIP = nip; // Set NIP yang sedang diedit
+
+                document.getElementById('nama').value = employee.nama;
+                document.getElementById('nip').value = employee.nip;
+                document.getElementById('nip').readOnly = true; // NIP tidak bisa diubah saat edit
+                document.getElementById('pangkatGolongan').value = employee.pangkatGolongan;
+                document.getElementById('jabatan').value = employee.jabatan;
+                document.getElementById('unitKerja').value = employee.unitKerja;
+                document.getElementById('statusPegawai').value = employee.statusPegawai;
+
+                // Populate current KGB data (which is the latest in history)
+                document.getElementById('gajiPokokLama').value = formatCurrency(employee.gajiPokokLama);
+                document.getElementById('gajiPokokBaru').value = formatCurrency(employee.gajiPokokBaru);
+                document.getElementById('masaKerjaTahun').value = employee.masaKerjaTahun;
+                document.getElementById('masaKerjaBulan').value = employee.masaKerjaBulan;
+                document.getElementById('tmtKgbTerakhir').value = employee.tmtKgbTerakhir;
+                document.getElementById('mulaiBerlaku').value = employee.mulaiBerlaku;
+                document.getElementById('tmtKgbBerikutnya').value = employee.tmtKgbBerikutnya;
+                document.getElementById('noSkKgb').value = employee.noSkKgb;
+
+                // Update terbilang for gaji pokok baru
+                updateTerbilang(employee.gajiPokokBaru, 'gajiPokokBaruTerbilang');
+
+                // Tampilkan tombol update dan tambah riwayat, sembunyikan tombol submit
+                document.getElementById('submitButton').classList.add('hidden');
+                document.getElementById('updateButton').classList.remove('hidden');
+                document.getElementById('cancelEditButton').classList.remove('hidden');
+                document.getElementById('addKGBForExistingButton').classList.remove('hidden'); // Selalu tampilkan di mode edit
+
+                // Remove the data-editing-history-index when editing the main employee record
+                delete document.getElementById('employeeForm').dataset.editingHistoryIndex;
+
+
+                // Arahkan ke section 'addEmployeeSection'
+                document.querySelector('.nav-link[data-target="addEmployeeSection"]').click();
+
+            } else {
+                showMessageModal('Error', 'Pegawai tidak ditemukan.');
+            }
+        }
+
+        function updateEmployee() {
+            if (!currentEditingNIP) {
+                showMessageModal('Error', 'Tidak ada pegawai yang sedang diedit.');
+                return;
+            }
+
+            const employeeIndex = employees.findIndex(emp => emp.nip === currentEditingNIP);
+            if (employeeIndex === -1) {
+                showMessageModal('Error', 'Pegawai tidak ditemukan.');
+                return;
+            }
+
+            const employeeForm = document.getElementById('employeeForm');
+            let updatedEmployee = employees[employeeIndex];
+
+            // If we are editing a specific history entry, update it.
+            const editingHistoryIndex = employeeForm.dataset.editingHistoryIndex;
+
+            // These fields are general employee info, not KGB history specific.
+            updatedEmployee.nama = employeeForm.nama.value;
+            updatedEmployee.pangkatGolongan = employeeForm.pangkatGolongan.value;
+            updatedEmployee.jabatan = employeeForm.jabatan.value;
+            updatedEmployee.unitKerja = employeeForm.unitKerja.value;
+            updatedEmployee.statusPegawai = employeeForm.statusPegawai.value;
+
+            const newGajiPokokLama = cleanCurrencyFormat(employeeForm.gajiPokokLama.value);
+            const newGajiPokokBaru = cleanCurrencyFormat(employeeForm.gajiPokokBaru.value);
+            const newMasaKerjaTahun = parseInt(employeeForm.masaKerjaTahun.value) || 0;
+            const newMasaKerjaBulan = parseInt(employeeForm.masaKerjaBulan.value) || 0;
+            const newTmtKgbTerakhir = employeeForm.tmtKgbTerakhir.value;
+            const newMulaiBerlaku = employeeForm.mulaiBerlaku.value;
+            const newTmtKgbBerikutnya = employeeForm.tmtKgbBerikutnya.value;
+            const newNoSkKgb = employeeForm.noSkKgb.value;
+
+            if (editingHistoryIndex !== undefined && updatedEmployee.kgbHistory[editingHistoryIndex]) {
+                // Update the specific history entry
+                updatedEmployee.kgbHistory[editingHistoryIndex] = {
+                    gajiPokokLama: newGajiPokokLama,
+                    gajiPokokBaru: newGajiPokokBaru,
+                    masaKerjaTahun: newMasaKerjaTahun,
+                    masaKerjaBulan: newMasaKerjaBulan,
+                    tmtKgbTerakhir: newTmtKgbTerakhir,
+                    mulaiBerlaku: newMulaiBerlaku,
+                    tmtKgbBerikutnya: newTmtKgbBerikutnya,
+                    noSkKgb: newNoSkKgb
+                };
+            } else {
+                // If not editing a specific history entry, this update is for the "current" KGB data.
+                // We'll update the main employee object's KGB fields and also make sure the latest history entry matches this.
+                // If there's no history, add it as the first entry.
+                if (!updatedEmployee.kgbHistory) {
+                    updatedEmployee.kgbHistory = [];
+                }
+
+                // Check if current form's "mulaiBerlaku" matches the latest history entry's "mulaiBerlaku"
+                const latestHistoryEntry = updatedEmployee.kgbHistory[updatedEmployee.kgbHistory.length - 1];
+                if (latestHistoryEntry && latestHistoryEntry.mulaiBerlaku === newMulaiBerlaku) {
+                    // Update the existing latest history entry
+                    latestHistoryEntry.gajiPokokLama = newGajiPokokLama;
+                    latestHistoryEntry.gajiPokokBaru = newGajiPokokBaru;
+                    latestHistoryEntry.masaKerjaTahun = newMasaKerjaTahun;
+                    latestHistoryEntry.masaKerjaBulan = newMasaKerjaBulan;
+                    latestHistoryEntry.tmtKgbTerakhir = newTmtKgbTerakhir;
+                    latestHistoryEntry.mulaiBerlaku = newMulaiBerlaku;
+                    latestHistoryEntry.tmtKgbBerikutnya = newTmtKgbBerikutnya;
+                    latestHistoryEntry.noSkKgb = newNoSkKgb;
+                } else {
+                    // If the "mulaiBerlaku" is different, it means this is effectively a new KGB,
+                    // so push it as a new history entry.
+                    // This is handled by addKGBHistoryForExisting, but for the "Update Data Pegawai" button,
+                    // if the date changed, it's ambiguous. For simplicity, "Update Data Pegawai" will
+                    // generally modify the *current/latest* data. If you want a *new* history entry,
+                    // you should explicitly click "Tambah Riwayat KGB".
+                    // For now, let's just make sure the main employee object reflects the form data.
+                    // The history will be managed by `addKGBHistoryForExisting` if new, or directly on the latest.
+                }
+
+                // Ensure the main employee object reflects the form data directly
+                updatedEmployee.gajiPokokLama = newGajiPokokLama;
+                updatedEmployee.gajiPokokBaru = newGajiPokokBaru;
+                updatedEmployee.masaKerjaTahun = newMasaKerjaTahun;
+                updatedEmployee.masaKerjaBulan = newMasaKerjaBulan;
+                updatedEmployee.tmtKgbTerakhir = newTmtKgbTerakhir;
+                updatedEmployee.mulaiBerlaku = newMulaiBerlaku;
+                updatedEmployee.tmtKgbBerikutnya = newTmtKgbBerikutnya;
+                updatedEmployee.noSkKgb = newNoSkKgb;
+            }
+
+            // Always re-sort and ensure the main employee object reflects the truly latest history after any update
+            if (updatedEmployee.kgbHistory.length > 0) {
+                updatedEmployee.kgbHistory.sort((a, b) => new Date(a.mulaiBerlaku + 'T00:00:00') - new Date(b.mulaiBerlaku + 'T00:00:00'));
+                const trulyLatestKGB = updatedEmployee.kgbHistory[updatedEmployee.kgbHistory.length - 1];
+                updatedEmployee.gajiPokokLama = trulyLatestKGB.gajiPokokLama;
+                updatedEmployee.gajiPokokBaru = trulyLatestKGB.gajiPokokBaru;
+                updatedEmployee.masaKerjaTahun = trulyLatestKGB.masaKerjaTahun;
+                updatedEmployee.masaKerjaBulan = trulyLatestKGB.masaKerjaBulan;
+                updatedEmployee.tmtKgbTerakhir = trulyLatestKGB.tmtKgbTerakhir;
+                updatedEmployee.mulaiBerlaku = trulyLatestKGB.mulaiBerlaku;
+                updatedEmployee.tmtKgbBerikutnya = trulyLatestKGB.tmtKgbBerikutnya;
+                updatedEmployee.noSkKgb = trulyLatestKGB.noSkKgb;
+            }
+
+
+            employees[employeeIndex] = updatedEmployee;
+            saveEmployees();
+            showMessageModal('Berhasil', 'Data pegawai berhasil diperbarui.');
+            resetForm();
+            renderDashboardTable();
+            renderUpcomingKGBTable();
+            updateDashboardCards();
+        }
+
+        function deleteEmployee(nip) {
+            showMessageModal(
+                'Konfirmasi Hapus',
+                'Apakah Anda yakin ingin menghapus data pegawai ini beserta seluruh riwayat KGB-nya? Tindakan ini tidak dapat dibatalkan.',
+                true,
+                `confirmDeleteEmployee('${nip}')`
+            );
+        }
+
+        function confirmDeleteEmployee(nip) {
+            employees = employees.filter(emp => emp.nip !== nip);
+            saveEmployees();
+            renderDashboardTable();
+            renderUpcomingKGBTable();
+            updateDashboardCards();
+            showMessageModal('Berhasil', 'Data pegawai berhasil dihapus.');
+        }
+
+        // Fungsi baru untuk menambahkan riwayat KGB untuk pegawai yang sudah ada
+        function addKGBHistoryForExisting(event) {
+            event.preventDefault();
+            const employeeForm = document.getElementById('employeeForm');
+
+            const employeeIndex = employees.findIndex(emp => emp.nip === currentEditingNIP);
+            if (employeeIndex === -1) {
+                showMessageModal('Error', 'Pegawai tidak ditemukan untuk menambahkan riwayat.');
+                return;
+            }
+
+            let employeeToUpdate = employees[employeeIndex];
+
+            // Cek apakah tanggal mulai berlaku sudah ada di riwayat
+            const newMulaiBerlakuDate = employeeForm.mulaiBerlaku.value;
+            const isDuplicateDate = employeeToUpdate.kgbHistory.some(history => history.mulaiBerlaku === newMulaiBerlakuDate);
+
+            if (isDuplicateDate) {
+                showMessageModal('Peringatan', `Riwayat KGB dengan tanggal Mulai Berlaku ${formatDate(newMulaiBerlakuDate)} sudah ada. Harap gunakan tanggal yang berbeda atau perbarui riwayat yang ada.`);
+                return;
+            }
+
+
+            const newHistoryEntry = {
+                gajiPokokLama: cleanCurrencyFormat(employeeForm.gajiPokokLama.value),
+                gajiPokokBaru: cleanCurrencyFormat(employeeForm.gajiPokokBaru.value),
+                masaKerjaTahun: parseInt(employeeForm.masaKerjaTahun.value) || 0,
+                masaKerjaBulan: parseInt(employeeForm.masaKerjaBulan.value) || 0,
+                tmtKgbTerakhir: employeeForm.tmtKgbTerakhir.value,
+                mulaiBerlaku: employeeForm.mulaiBerlaku.value,
+                tmtKgbBerikutnya: employeeForm.tmtKgbBerikutnya.value, // Get from calculated field
+                noSkKgb: employeeForm.noSkKgb.value
+            };
+
+            // Tambahkan entri riwayat baru
+            employeeToUpdate.kgbHistory.push(newHistoryEntry);
+
+            // Urutkan riwayat berdasarkan tanggal Mulai Berlaku (dari terlama ke terbaru)
+            employeeToUpdate.kgbHistory.sort((a, b) => new Date(a.mulaiBerlaku + 'T00:00:00') - new Date(b.mulaiBerlaku + 'T00:00:00'));
+
+            // Perbarui data utama pegawai dengan riwayat KGB terbaru
+            const latestKGB = employeeToUpdate.kgbHistory[employeeToUpdate.kgbHistory.length - 1];
+            employeeToUpdate.gajiPokokLama = latestKGB.gajiPokokLama;
+            employeeToUpdate.gajiPokokBaru = latestKGB.gajiPokokBaru;
+            employeeToUpdate.masaKerjaTahun = latestKGB.masaKerjaTahun;
+            employeeToUpdate.masaKerjaBulan = latestKGB.masaKerjaBulan;
+            employeeToUpdate.tmtKgbTerakhir = latestKGB.tmtKgbTerakhir;
+            employeeToUpdate.mulaiBerlaku = latestKGB.mulaiBerlaku;
+            employeeToUpdate.tmtKgbBerikutnya = latestKGB.tmtKgbBerikutnya;
+            employeeToUpdate.noSkKgb = latestKGB.noSkKgb;
+
+            // Simpan perubahan
+            saveEmployees();
+            showMessageModal('Berhasil', 'Riwayat KGB baru berhasil ditambahkan untuk pegawai ini.');
+            resetForm();
+            renderDashboardTable();
+            renderUpcomingKGBTable();
+            updateDashboardCards();
+        }
+
+        // Dipanggil dari pesan modal ketika NIP sudah terdaftar
+        function addKGBEntryFromHistoryModal(nip) {
+            editEmployeeForKGBAdd(nip); // Ini akan mengisi form dan menampilkan tombol yang benar
+            showMessageModal('Informasi', 'Form Tambah Pegawai telah diisi dengan data pegawai yang ada. Anda bisa menambah riwayat KGB baru untuknya.', false); // Informasikan user
+        }
+
+
+        function resetForm() {
+            document.getElementById('employeeForm').reset();
+            document.getElementById('gajiPokokBaruTerbilang').innerText = 'nol';
+            document.getElementById('nip').readOnly = false; // Pastikan NIP bisa diedit lagi
+            currentEditingNIP = null; // Reset NIP yang sedang diedit
+            delete document.getElementById('employeeForm').dataset.editingHistoryIndex; // Clear history index
+
+            // Sembunyikan tombol update dan riwayat, tampilkan tombol submit
+            document.getElementById('submitButton').classList.remove('hidden');
+            document.getElementById('updateButton').classList.add('hidden');
+            document.getElementById('cancelEditButton').classList.add('hidden');
+            document.getElementById('addKGBForExistingButton').classList.add('hidden');
+        }
+
+        // --- 7. Fungsi Rendering Tabel & Pagination ---
+        function renderDashboardTable(page = 1) {
+            currentDashboardPage = page;
+            const tableBody = document.getElementById('dashboardEmployeeTableBody');
+            tableBody.innerHTML = '';
+
+            const startIndex = (page - 1) * ITEMS_PER_PAGE;
+            const endIndex = startIndex + ITEMS_PER_PAGE;
+
+            // Urutkan pegawai berdasarkan NIP (atau nama, sesuai kebutuhan)
+            const sortedEmployees = [...employees].sort((a, b) => a.nama.localeCompare(b.nama));
+            const paginatedEmployees = sortedEmployees.slice(startIndex, endIndex);
+
+            if (paginatedEmployees.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="8" class="px-4 py-2 text-center text-gray-500">Tidak ada data pegawai.</td></tr>`;
+            } else {
+                paginatedEmployees.forEach(employee => {
+                    const row = tableBody.insertRow();
+                    row.className = 'hover:bg-gray-50';
+                    row.innerHTML = `
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800 font-medium">${employee.nama}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800">${employee.nip}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800">${employee.pangkatGolongan || '-'}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800">${formatCurrency(employee.gajiPokokBaru)}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800">${employee.masaKerjaTahun} th ${employee.masaKerjaBulan} bln</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800">${formatDate(employee.tmtKgbBerikutnya)}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800">${employee.unitKerja || '-'}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
+                            <button onclick="editEmployeeForKGBAdd('${employee.nip}')" class="text-indigo-600 hover:text-indigo-900">Edit</button>
+                            <button onclick="showHistoryModal('${employee.nip}')" class="text-blue-600 hover:text-blue-900 ml-2">Riwayat</button>
+                            <button onclick="deleteEmployee('${employee.nip}')" class="text-red-600 hover:text-red-900 ml-2">Hapus</button>
+                        </td>
+                    `;
+                });
+            }
+
+            renderPagination('dashboardEmployeePagination', employees.length, currentDashboardPage, renderDashboardTable);
+        }
+
+
+        function renderUpcomingKGBTable(page = 1) {
+            currentUpcomingPage = page;
+            const tableBody = document.getElementById('upcomingKGBTableBody');
+            tableBody.innerHTML = '';
+
+            const filterMonth = document.getElementById('filterMonth').value;
+            const filterYear = document.getElementById('filterYear').value;
+            const today = new Date();
+            const filteredEmployees = employees.filter(employee => {
+                const tmtKgbBerikutnyaDate = new Date(employee.tmtKgbBerikutnya + 'T00:00:00');
+                if (isNaN(tmtKgbBerikutnyaDate.getTime())) return false; // Skip invalid dates
+
+                // Check if KGB is in the future relative to today
+                if (tmtKgbBerikutnyaDate < today) return false; // Only show upcoming, not overdue
+
+                const matchesMonth = filterMonth === 'all' || tmtKgbBerikutnyaDate.getMonth() === parseInt(filterMonth);
+                const matchesYear = filterYear === 'all' || tmtKgbBerikutnyaDate.getFullYear() === parseInt(filterYear);
+
+                return matchesMonth && matchesYear;
+            }).sort((a, b) => new Date(a.tmtKgbBerikutnya + 'T00:00:00') - new Date(b.tmtKgbBerikutnya + 'T00:00:00')); // Sort by upcoming date
+
+            const startIndex = (page - 1) * ITEMS_PER_PAGE;
+            const endIndex = startIndex + ITEMS_PER_PAGE;
+            const paginatedEmployees = filteredEmployees.slice(startIndex, endIndex);
+
+            if (paginatedEmployees.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="7" class="px-4 py-2 text-center text-gray-500">Tidak ada KGB mendatang yang sesuai filter.</td></tr>`;
+            } else {
+                paginatedEmployees.forEach(employee => {
+                    const row = tableBody.insertRow();
+                    row.className = 'hover:bg-gray-50';
+                    row.innerHTML = `
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800 font-medium">${employee.nama}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800">${employee.nip}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800">${employee.pangkatGolongan || '-'}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800">${formatDate(employee.tmtKgbTerakhir)}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800">${formatDate(employee.tmtKgbBerikutnya)}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800">${employee.unitKerja || '-'}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
+                            <button onclick="editEmployeeForKGBAdd('${employee.nip}')" class="text-indigo-600 hover:text-indigo-900">Edit</button>
+                            <button onclick="showHistoryModal('${employee.nip}')" class="text-blue-600 hover:text-blue-900 ml-2">Riwayat</button>
+                        </td>
+                    `;
+                });
+            }
+
+            renderPagination('upcomingKGBPagination', filteredEmployees.length, currentUpcomingPage, renderUpcomingKGBTable);
+        }
+
+        function renderPagination(paginationId, totalItems, currentPage, renderFunction) {
+            const paginationContainer = document.getElementById(paginationId);
+            paginationContainer.innerHTML = '';
+
+            const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
+            if (totalPages <= 1) return;
+
+            // Previous Button
+            const prevButton = document.createElement('button');
+            prevButton.className = `px-3 py-1 rounded-md ${currentPage === 1 ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`;
+            prevButton.innerText = 'Sebelumnya';
+            prevButton.disabled = currentPage === 1;
+            prevButton.onclick = () => renderFunction(currentPage - 1);
+            paginationContainer.appendChild(prevButton);
+
+            // Page Numbers
+            const maxPageButtons = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxPageButtons / 2));
+            let endPage = Math.min(totalPages, startPage + maxPageButtons - 1);
+
+            if (endPage - startPage + 1 < maxPageButtons) {
+                startPage = Math.max(1, endPage - maxPageButtons + 1);
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                const pageButton = document.createElement('button');
+                pageButton.className = `px-3 py-1 rounded-md ml-1 ${i === currentPage ? 'bg-blue-700 text-white' : 'bg-blue-500 text-white hover:bg-blue-600'}`;
+                pageButton.innerText = i;
+                pageButton.onclick = () => renderFunction(i);
+                paginationContainer.appendChild(pageButton);
+            }
+
+            // Next Button
+            const nextButton = document.createElement('button');
+            nextButton.className = `px-3 py-1 rounded-md ml-1 ${currentPage === totalPages ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`;
+            nextButton.innerText = 'Berikutnya';
+            nextButton.disabled = currentPage === totalPages;
+            nextButton.onclick = () => renderFunction(currentPage + 1);
+            paginationContainer.appendChild(nextButton);
+        }
+
+        // --- 8. Update Dashboard Cards ---
+        function updateDashboardCards() {
+            document.getElementById('totalEmployeesCard').innerText = employees.length;
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Normalize to start of day
+
+            let upcomingKGBCount = 0;
+            let currentMonthKGBCount = 0;
+            let overdueKGBCount = 0;
+
+            employees.forEach(employee => {
+                if (employee.tmtKgbBerikutnya) {
+                    const tmtKgbBerikutnyaDate = new Date(employee.tmtKgbBerikutnya + 'T00:00:00');
+                    if (isNaN(tmtKgbBerikutnyaDate.getTime())) return; // Skip invalid dates
+
+                    // Calculate difference in months for upcoming (within 12 months)
+                    const diffYears = tmtKgbBerikutnyaDate.getFullYear() - today.getFullYear();
+                    const diffMonths = tmtKgbBerikutnyaDate.getMonth() - today.getMonth();
+                    const totalMonthsDiff = diffYears * 12 + diffMonths;
+
+                    // Upcoming KGB (within next 12 months, and in the future)
+                    if (tmtKgbBerikutnyaDate >= today && totalMonthsDiff <= 12) {
+                        upcomingKGBCount++;
+                    }
+
+                    // KGB Bulan Ini
+                    if (tmtKgbBerikutnyaDate.getFullYear() === today.getFullYear() &&
+                        tmtKgbBerikutnyaDate.getMonth() === today.getMonth()) {
+                        currentMonthKGBCount++;
+                    }
+
+                    // KGB Terlambat (lewat dari hari ini)
+                    if (tmtKgbBerikutnyaDate < today) {
+                        overdueKGBCount++;
+                    }
+                }
+            });
+
+            document.getElementById('upcomingKGBCard').innerText = upcomingKGBCount;
+            document.getElementById('currentMonthKGBCard').innerText = currentMonthKGBCount;
+            document.getElementById('overdueKGBCard').innerText = overdueKGBCount;
+        }
+
+
+        // --- 9. Event Listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadEmployees();
+            renderDashboardTable();
+            updateDashboardCards();
+            populateFilterYears();
+
+            // Set default active section
+            const dashboardLink = document.querySelector('.nav-link[data-target="dashboardSection"]');
+            if (dashboardLink) {
+                dashboardLink.classList.add('bg-blue-200', 'text-blue-900');
+                document.getElementById('dashboardSection').classList.remove('hidden');
+            }
+        });
+
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                // Remove active classes from all links
+                document.querySelectorAll('.nav-link').forEach(nav => {
+                    nav.classList.remove('bg-blue-200', 'text-blue-900');
+                    nav.classList.add('text-blue-800');
+                });
+                // Add active classes to the clicked link
+                this.classList.add('bg-blue-200', 'text-blue-900');
+                this.classList.remove('text-blue-800');
+
+                // Hide all content sections
+                document.querySelectorAll('.content-section').forEach(section => {
+                    section.classList.add('hidden');
+                });
+
+                // Show the target section
+                const targetId = this.dataset.target;
+                document.getElementById(targetId).classList.remove('hidden');
+
+                // Re-render specific tables when their section is shown
+                if (targetId === 'dashboardSection') {
+                    renderDashboardTable();
+                    updateDashboardCards();
+                } else if (targetId === 'upcomingKGBSection') {
+                    renderUpcomingKGBTable();
+                } else if (targetId === 'addEmployeeSection') {
+                    // When navigating to add employee section directly, ensure form is reset
+                    resetForm();
+                }
+            });
+        });
+
+        // Event listeners for Add Employee form
+        document.getElementById('employeeForm').addEventListener('submit', function(event) {
+            // Check if we are in "edit" mode for a specific history entry
+            const editingHistoryIndex = this.dataset.editingHistoryIndex;
+            if (currentEditingNIP && editingHistoryIndex !== undefined) {
+                 event.preventDefault(); // Prevent default submission
+                 // Directly call update logic for the specific history entry
+                 updateEmployee(); // This will handle updating the specific history entry AND main employee fields
+            } else if (currentEditingNIP) {
+                // If currentEditingNIP is set but no history index, it means we're editing the main employee record
+                event.preventDefault();
+                updateEmployee();
+            }
+            else {
+                addEmployee(event); // Call addEmployee if not in edit mode
+            }
+        });
+
+        document.getElementById('gajiPokokBaru').addEventListener('input', function() {
+            // Format input as currency while typing
+            let value = this.value.replace(/[^0-9]/g, ''); // Remove non-digits
+            if (value) {
+                value = parseInt(value, 10);
+                this.value = formatCurrency(value);
+            } else {
+                this.value = '';
+            }
+            updateTerbilang(this.value, 'gajiPokokBaruTerbilang');
+        });
+
+        // Calculate TMT KGB Berikutnya automatically
+        document.getElementById('mulaiBerlaku').addEventListener('change', calculateTmtKgbBerikutnya);
+        document.getElementById('tmtKgbTerakhir').addEventListener('change', calculateTmtKgbBerikutnya);
+
+
+        // Filter events for Upcoming KGB
+        document.getElementById('filterMonth').addEventListener('change', () => renderUpcomingKGBTable(1));
+        document.getElementById('filterYear').addEventListener('change', () => renderUpcomingKGBTable(1));
+
+        // Populate filter years for KGB Mendatang and Export
+        function populateFilterYears() {
+            const currentYear = new Date().getFullYear();
+            const filterYearSelect = document.getElementById('filterYear');
+            const exportYearFilterSelect = document.getElementById('exportYearFilter');
+
+            // Clear previous options
+            filterYearSelect.innerHTML = '<option value="all">Semua Tahun</option>';
+            exportYearFilterSelect.innerHTML = '<option value="all">Semua Tahun</option>';
+
+            // Add years: 3 years prior to current year, current year, and 5 years after current year
+            for (let i = currentYear - 3; i <= currentYear + 5; i++) {
+                const optionFilter = document.createElement('option');
+                optionFilter.value = i;
+                optionFilter.textContent = i;
+                filterYearSelect.appendChild(optionFilter);
+
+                const optionExport = document.createElement('option');
+                optionExport.value = i;
+                optionExport.textContent = i;
+                exportYearFilterSelect.appendChild(optionExport);
+            }
+            filterYearSelect.value = currentYear; // Default to current year
+            exportYearFilterSelect.value = currentYear; // Default to current year for export too
+        }
+
+        // Event listener for "Perbarui Data Pegawai" button
+        document.getElementById('updateButton').addEventListener('click', updateEmployee);
+
+        // Event listener for "Tambah Riwayat KGB" button
+        document.getElementById('addKGBForExistingButton').addEventListener('click', addKGBHistoryForExisting);
+
+        // Event listener for "Batal" button
+        document.getElementById('cancelEditButton').addEventListener('click', resetForm);
+
+        // Event listener for "Tambah Riwayat Baru" button in history modal
+        document.getElementById('addHistoryEntryButton').addEventListener('click', function() {
+            const nip = document.getElementById('historyEmployeeName').dataset.nip;
+            if (nip) {
+                closeHistoryModal(); // Tutup modal riwayat
+                editEmployeeForKGBAdd(nip); // Panggil fungsi edit untuk mengisi form dengan data pegawai yang sedang dilihat riwayatnya
+            }
+        });
+
+
+        // --- 10. Import/Export Functions ---
+        async function exportToExcel() {
+            showLoadingIndicator();
+            await new Promise(resolve => setTimeout(resolve, 50)); // Small delay for loading indicator
+
+            const selectedYear = document.getElementById('exportYearFilter').value;
+            let dataToExport = [];
+            let sheetName = 'Data Pegawai';
+
+            if (selectedYear !== 'all') {
+                sheetName = `KGB Mendatang Tahun ${selectedYear}`;
+                const filterYearNum = parseInt(selectedYear);
+                const today = new Date(); // Current date for comparison
+
+                const filteredByYear = employees.filter(employee => {
+                    if (!employee.tmtKgbBerikutnya) return false;
+                    const kgbDate = new Date(employee.tmtKgbBerikutnya + 'T00:00:00');
+                    return kgbDate.getFullYear() === filterYearNum && kgbDate >= today; // Only future KGB in that year
+                });
+
+                if (filteredByYear.length === 0) {
+                    hideLoadingIndicator();
+                    showMessageModal('Informasi', `Tidak ada data KGB mendatang untuk tahun ${selectedYear} untuk diekspor.`);
+                    return;
+                }
+
+                // Headers for upcoming KGB export
+                const headers = [
+                    "Nama Lengkap", "NIP", "Pangkat/Golongan", "Jabatan", "Unit Kerja", "Status Pegawai",
+                    "Gaji Pokok Lama (Saat Ini)", "Gaji Pokok Baru (Saat Ini)", "Masa Kerja Tahun (Saat Ini)", "Masa Kerja Bulan (Saat Ini)",
+                    "TMT KGB Terakhir (Saat Ini)", "Mulai Berlaku (Saat Ini)", "TMT KGB Berikutnya (Saat Ini)", "No. SK KGB (Saat Ini)"
+                ];
+                dataToExport.push(headers);
+
+                filteredByYear.forEach(emp => {
+                    dataToExport.push([
+                        emp.nama, emp.nip, emp.pangkatGolongan, emp.jabatan, emp.unitKerja, emp.statusPegawai,
+                        emp.gajiPokokLama, emp.gajiPokokBaru, emp.masaKerjaTahun, emp.masaKerjaBulan,
+                        emp.tmtKgbTerakhir, emp.mulaiBerlaku, emp.tmtKgbBerikutnya, emp.noSkKgb
+                    ]);
+                });
+
+            } else { // Export all employees with their latest KGB and full history
+                const allHeaders = [
+                    "Nama Lengkap", "NIP", "Pangkat/Golongan", "Jabatan", "Unit Kerja", "Status Pegawai",
+                    "Gaji Pokok Lama (Saat Ini)", "Gaji Pokok Baru (Saat Ini)", "Masa Kerja Tahun (Saat Ini)", "Masa Kerja Bulan (Saat Ini)",
+                    "TMT KGB Terakhir (Saat Ini)", "Mulai Berlaku (Saat Ini)", "TMT KGB Berikutnya (Saat Ini)", "No. SK KGB (Saat Ini)"
+                ];
+
+                // Dynamically add history headers
+                let maxHistoryEntries = 0;
+                employees.forEach(emp => {
+                    if (emp.kgbHistory && emp.kgbHistory.length > maxHistoryEntries) {
+                        maxHistoryEntries = emp.kgbHistory.length;
+                    }
+                });
+
+                for (let i = 0; i < maxHistoryEntries; i++) {
+                    allHeaders.push(`History ${i + 1} - TMT KGB Terakhir`);
+                    allHeaders.push(`History ${i + 1} - Mulai Berlaku`);
+                    allHeaders.push(`History ${i + 1} - Gaji Pokok Lama`);
+                    allHeaders.push(`History ${i + 1} - Gaji Pokok Baru`);
+                    allHeaders.push(`History ${i + 1} - Masa Kerja Tahun`);
+                    allHeaders.push(`History ${i + 1} - Masa Kerja Bulan`);
+                    allHeaders.push(`History ${i + 1} - TMT KGB Berikutnya`);
+                    allHeaders.push(`History ${i + 1} - No. SK KGB`);
+                }
+                dataToExport.push(allHeaders);
+
+                employees.forEach(emp => {
+                    const row = [
+                        emp.nama, emp.nip, emp.pangkatGolongan, emp.jabatan, emp.unitKerja, emp.statusPegawai,
+                        emp.gajiPokokLama, emp.gajiPokokBaru, emp.masaKerjaTahun, emp.masaKerjaBulan,
+                        emp.tmtKgbTerakhir, emp.mulaiBerlaku, emp.tmtKgbBerikutnya, emp.noSkKgb
+                    ];
+                    // Add history data
+                    for (let i = 0; i < maxHistoryEntries; i++) {
+                        const historyEntry = emp.kgbHistory ? emp.kgbHistory[i] : null;
+                        if (historyEntry) {
+                            row.push(historyEntry.tmtKgbTerakhir);
+                            row.push(historyEntry.mulaiBerlaku);
+                            row.push(historyEntry.gajiPokokLama);
+                            row.push(historyEntry.gajiPokokBaru);
+                            row.push(historyEntry.masaKerjaTahun);
+                            row.push(historyEntry.masaKerjaBulan);
+                            row.push(historyEntry.tmtKgbBerikutnya);
+                            row.push(historyEntry.noSkKgb);
+                        } else {
+                            // Fill with empty values if no history entry
+                            row.push('', '', '', '', '', '', '', '');
+                        }
+                    }
+                    dataToExport.push(row);
+                });
+            }
+
+
+            const ws = XLSX.utils.aoa_to_sheet(dataToExport);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, sheetName);
+            XLSX.writeFile(wb, `${sheetName}.xlsx`);
+
+            hideLoadingIndicator();
+            showMessageModal('Berhasil', 'Data berhasil diekspor ke Excel!');
+        }
+
+        async function importFromExcel() {
+            const fileInput = document.getElementById('importFileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showMessageModal('Peringatan', 'Pilih file Excel untuk diimpor.');
+                return;
+            }
+
+            showLoadingIndicator();
+            await new Promise(resolve => setTimeout(resolve, 50)); // Small delay for loading indicator
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    if (json.length < 2) {
+                        showMessageModal('Error', 'File Excel kosong atau tidak memiliki data.');
+                        hideLoadingIndicator();
+                        return;
+                    }
+
+                    const headers = json[0];
+                    const importedEmployees = [];
+                    const expectedHeaders = [
+                        "Nama Lengkap", "NIP", "Pangkat/Golongan", "Jabatan", "Unit Kerja", "Status Pegawai",
+                        "Gaji Pokok Lama (Saat Ini)", "Gaji Pokok Baru (Saat Ini)", "Masa Kerja Tahun (Saat Ini)", "Masa Kerja Bulan (Saat Ini)",
+                        "TMT KGB Terakhir (Saat Ini)", "Mulai Berlaku (Saat Ini)", "TMT KGB Berikutnya (Saat Ini)", "No. SK KGB (Saat Ini)"
+                    ];
+
+                    // Verify main headers exist
+                    const missingHeaders = expectedHeaders.filter(header => !headers.includes(header));
+                    if (missingHeaders.length > 0) {
+                        showMessageModal('Error', `File Excel tidak memiliki kolom header yang diperlukan: ${missingHeaders.join(', ')}. Harap perbaiki file Anda.`);
+                        hideLoadingIndicator();
+                        return;
+                    }
+
+
+                    for (let i = 1; i < json.length; i++) {
+                        const row = json[i];
+                        const employeeData = {};
+                        const kgbHistory = [];
+
+                        for (let j = 0; j < headers.length; j++) {
+                            const header = headers[j];
+                            const value = row[j];
+
+                            if (header.startsWith('History ')) {
+                                // Extract history number and column name
+                                const match = header.match(/^History (\d+) - (.+)$/);
+                                if (match) {
+                                    const historyNum = parseInt(match[1]) - 1; // 0-indexed
+                                    const historyCol = match[2];
+
+                                    if (!kgbHistory[historyNum]) {
+                                        kgbHistory[historyNum] = {};
+                                    }
+
+                                    // Map history column names to internal property names
+                                    switch (historyCol) {
+                                        case 'TMT KGB Terakhir': kgbHistory[historyNum].tmtKgbTerakhir = value ? new Date(value).toISOString().split('T')[0] : ''; break;
+                                        case 'Mulai Berlaku': kgbHistory[historyNum].mulaiBerlaku = value ? new Date(value).toISOString().split('T')[0] : ''; break;
+                                        case 'Gaji Pokok Lama': kgbHistory[historyNum].gajiPokokLama = value || 0; break;
+                                        case 'Gaji Pokok Baru': kgbHistory[historyNum].gajiPokokBaru = value || 0; break;
+                                        case 'Masa Kerja Tahun': kgbHistory[historyNum].masaKerjaTahun = parseInt(value) || 0; break;
+                                        case 'Masa Kerja Bulan': kgbHistory[historyNum].masaKerjaBulan = parseInt(value) || 0; break;
+                                        case 'TMT KGB Berikutnya': kgbHistory[historyNum].tmtKgbBerikutnya = value ? new Date(value).toISOString().split('T')[0] : ''; break;
+                                        case 'No. SK KGB': kgbHistory[historyNum].noSkKgb = value ? String(value) : ''; break;
+                                    }
+                                }
+                            } else {
+                                // Map main employee headers to internal property names
+                                switch (header) {
+                                    case 'Nama Lengkap': employeeData.nama = value ? String(value) : ''; break;
+                                    case 'NIP': employeeData.nip = value ? String(value) : ''; break;
+                                    case 'Pangkat/Golongan': employeeData.pangkatGolongan = value ? String(value) : ''; break;
+                                    case 'Jabatan': employeeData.jabatan = value ? String(value) : ''; break;
+                                    case 'Unit Kerja': employeeData.unitKerja = value ? String(value) : ''; break;
+                                    case 'Status Pegawai': employeeData.statusPegawai = value ? String(value) : ''; break;
+                                    case 'Gaji Pokok Lama (Saat Ini)': employeeData.gajiPokokLama = value || 0; break;
+                                    case 'Gaji Pokok Baru (Saat Ini)': employeeData.gajiPokokBaru = value || 0; break;
+                                    case 'Masa Kerja Tahun (Saat Ini)': employeeData.masaKerjaTahun = parseInt(value) || 0; break;
+                                    case 'Masa Kerja Bulan (Saat Ini)': employeeData.masaKerjaBulan = parseInt(value) || 0; break;
+                                    case 'TMT KGB Terakhir (Saat Ini)': employeeData.tmtKgbTerakhir = value ? new Date(value).toISOString().split('T')[0] : ''; break;
+                                    case 'Mulai Berlaku (Saat Ini)': employeeData.mulaiBerlaku = value ? new Date(value).toISOString().split('T')[0] : ''; break;
+                                    case 'TMT KGB Berikutnya (Saat Ini)': employeeData.tmtKgbBerikutnya = value ? new Date(value).toISOString().split('T')[0] : ''; break;
+                                    case 'No. SK KGB (Saat Ini)': employeeData.noSkKgb = value ? String(value) : ''; break;
+                                }
+                            }
+                        }
+
+                        // Filter out empty history objects and sort by mulaiBerlaku
+                        employeeData.kgbHistory = kgbHistory.filter(h => h && h.mulaiBerlaku).sort((a, b) => new Date(a.mulaiBerlaku + 'T00:00:00') - new Date(b.mulaiBerlaku + 'T00:00:00'));
+
+                        // Ensure main employee fields reflect the latest history if history exists
+                        if (employeeData.kgbHistory.length > 0) {
+                            const latestHistory = employeeData.kgbHistory[employeeData.kgbHistory.length - 1];
+                            employeeData.gajiPokokLama = latestHistory.gajiPokokLama;
+                            employeeData.gajiPokokBaru = latestHistory.gajiPokokBaru;
+                            employeeData.masaKerjaTahun = latestHistory.masaKerjaTahun;
+                            employeeData.masaKerjaBulan = latestHistory.masaKerjaBulan;
+                            employeeData.tmtKgbTerakhir = latestHistory.tmtKgbTerakhir;
+                            employeeData.mulaiBerlaku = latestHistory.mulaiBerlaku;
+                            employeeData.tmtKgbBerikutnya = latestHistory.tmtKgbBerikutnya;
+                            employeeData.noSkKgb = latestHistory.noSkKgb;
+                        }
+
+                        // Validate NIP (basic check)
+                        if (employeeData.nip) {
+                            importedEmployees.push(employeeData);
+                        } else {
+                            console.warn("Skipping row due to missing NIP:", row);
+                        }
+                    }
+
+                    employees = importedEmployees; // Replace existing data
+                    saveEmployees();
+                    showMessageModal('Berhasil', `${employees.length} data pegawai berhasil diimpor.`);
+                    renderDashboardTable();
+                    renderUpcomingKGBTable();
+                    updateDashboardCards();
+                } catch (error) {
+                    console.error("Error importing Excel:", error);
+                    showMessageModal('Error', `Gagal mengimpor file Excel: ${error.message}. Pastikan format file benar.`);
+                } finally {
+                    hideLoadingIndicator();
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        async function exportToPdf() {
+            showLoadingIndicator();
+            await new Promise(resolve => setTimeout(resolve, 50)); // Small delay for loading indicator
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const selectedYear = document.getElementById('exportYearFilter').value;
+            let title = "Daftar Data Pegawai";
+            let filteredData = [...employees]; // Default to all employees
+
+            const head = [
+                ["Nama Lengkap", "NIP", "Pangkat/Gol.", "Gaji Pokok Baru", "Masa Kerja", "TMT KGB Berikutnya", "Unit Kerja"]
+            ];
+            const body = [];
+
+            if (selectedYear !== 'all') {
+                title = `Daftar KGB Mendatang Tahun ${selectedYear}`;
+                const filterYearNum = parseInt(selectedYear);
+                const today = new Date();
+
+                filteredData = employees.filter(employee => {
+                    if (!employee.tmtKgbBerikutnya) return false;
+                    const kgbDate = new Date(employee.tmtKgbBerikutnya + 'T00:00:00');
+                    return kgbDate.getFullYear() === filterYearNum && kgbDate >= today;
+                }).sort((a, b) => new Date(a.tmtKgbBerikutnya + 'T00:00:00') - new Date(b.tmtKgbBerikutnya + 'T00:00:00'));
+
+                if (filteredData.length === 0) {
+                    hideLoadingIndicator();
+                    showMessageModal('Informasi', `Tidak ada data KGB mendatang untuk tahun ${selectedYear} untuk diekspor ke PDF.`);
+                    return;
+                }
+            } else {
+                // For "All Years" export, sort by NIP for consistency
+                filteredData.sort((a, b) => a.nip.localeCompare(b.nip));
+            }
+
+
+            filteredData.forEach(emp => {
+                body.push([
+                    emp.nama,
+                    emp.nip,
+                    emp.pangkatGolongan || '-',
+                    formatCurrency(emp.gajiPokokBaru),
+                    `${emp.masaKerjaTahun} th ${emp.masaKerjaBulan} bln`,
+                    formatDate(emp.tmtKgbBerikutnya),
+                    emp.unitKerja || '-'
+                ]);
+            });
+
+            doc.setFontSize(16);
+            doc.text(title, 14, 20);
+
+            doc.autoTable({
+                startY: 30,
+                head: head,
+                body: body,
+                theme: 'striped',
+                headStyles: { fillColor: [48, 114, 204] }, // Tailwind blue-600 equivalent
+                styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+                columnStyles: {
+                    0: { cellWidth: 35 }, // Nama Lengkap
+                    1: { cellWidth: 25 }, // NIP
+                    2: { cellWidth: 20 }, // Pangkat/Gol.
+                    3: { cellWidth: 25 }, // Gaji Pokok Baru
+                    4: { cellWidth: 20 }, // Masa Kerja
+                    5: { cellWidth: 25 }, // TMT KGB Berikutnya
+                    6: { cellWidth: 25 }  // Unit Kerja
+                }
+            });
+
+            doc.save(`${title}.pdf`);
+
+            hideLoadingIndicator();
+            showMessageModal('Berhasil', 'Data berhasil diekspor ke PDF!');
+        }
+
+    </script>
+</body>
+</html>
